@@ -1,0 +1,135 @@
+{
+	"name": "Quarterly Access Profiles Email and Cert Clean",
+	"description": "",
+	"modified": "2025-07-23T10:26:32.827811947Z",
+	"modifiedBy": {
+		"type": "IDENTITY",
+		"id": "xyz",
+		"name": "Kevin.Dicken"
+	},
+	"definition": {
+		"start": "Get Identity",
+		"steps": {
+			"Create Certification Campaign": {
+				"actionId": "sp:create-campaign",
+				"attributes": {
+					"activateUponCreation": true,
+					"description": "Trigger Identity Name can go here later",
+					"duration": "2w",
+					"emailNotificationEnabled": true,
+					"name": "Test",
+					"recommendationsEnabled": true,
+					"reviewerAccessItemType": "ACCESS_PROFILE",
+					"reviewerAccessOperator": "ALL",
+					"reviewerCertificationType": "ACCESS",
+					"reviewerId": "zxy",
+					"type": "REVIEWER_IDENTITY",
+					"undecidedAccess": false
+				},
+				"description": "DRAFT: This is for certifying identities per access profile",
+				"displayName": "",
+				"nextStep": "End Step - Success",
+				"type": "action",
+				"versionNumber": 2
+			},
+			"End Step - Failure": {
+				"actionId": "sp:operator-failure",
+				"displayName": "",
+				"failureName": "No Identity Data Detected",
+				"type": "failure"
+			},
+			"End Step - Success": {
+				"actionId": "sp:operator-success",
+				"displayName": "",
+				"type": "success"
+			},
+			"Get Access": {
+				"actionId": "sp:access:get",
+				"attributes": {
+					"accessprofiles": true,
+					"entitlements": false,
+					"getAccessBy": "searchQuery",
+					"identityToReturn": "zxy",
+					"query": "name: \"RR_AAP_Admin\"",
+					"roles": false
+				},
+				"description": "Gets all roles with \"Product Role\" in their name.\n\nIn this example, the identity needs to retain this access despite their department move. If the access gets removed because they no longer meet the role criteria, it must be put back by this workflow. This step retrieves the access for the Manage Access step to add.",
+				"displayName": "",
+				"nextStep": "Manage Access",
+				"type": "action",
+				"versionNumber": 1
+			},
+			"Get Identity": {
+				"actionId": "sp:get-identity",
+				"attributes": {
+					"id.$": "$.trigger.identity.id"
+				},
+				"description": "Retrieves available details about the identity.",
+				"displayName": "",
+				"nextStep": "Verify Data Type",
+				"type": "action",
+				"versionNumber": 2
+			},
+			"Manage Access": {
+				"actionId": "sp:access:manage",
+				"attributes": {
+					"addIdentities.$": "$.trigger.identity.id",
+					"comments": "Test",
+					"removeDuration": "2w",
+					"requestType": "GRANT_ACCESS",
+					"requestedItems": "$.getAccess.accessItems"
+				},
+				"description": "Adds the access from the Get Access step to the identity.",
+				"displayName": "",
+				"nextStep": "Send Email",
+				"type": "action",
+				"versionNumber": 1
+			},
+			"Send Email": {
+				"actionId": "sp:send-email",
+				"attributes": {
+					"body": "<p>FW to Kevin<br>Attention,</p>\n<p>User <strong>${name} </strong>has recently changed departments</p>\n<p>&nbsp;</p>\n<p>User Access Profiles to APPROVE/DENY:</p>\n<p>$.getAccess.accessItems</p>\n<p><br>Thank you,<br>Access Team</p>",
+					"context": {
+						"name.$": "$.getIdentity.attributes.displayName"
+					},
+					"from": "no-reply-IAM-CHangeMe@dnb.nl",
+					"recipientEmailList.$": "$.getIdentity1.attributes.email",
+					"replyTo": "IAMTeam@dnb.nl",
+					"subject": "Quarterly Access Profile Review"
+				},
+				"description": "Sends an email to the owner.",
+				"displayName": "",
+				"nextStep": "Create Certification Campaign",
+				"type": "action",
+				"versionNumber": 2
+			},
+			"Verify Data Type": {
+				"actionId": "sp:compare-unary",
+				"choiceList": [
+					{
+						"comparator": "IsNull",
+						"nextStep": "End Step - Failure",
+						"variableA.$": "$.trigger.identity.id"
+					}
+				],
+				"defaultStep": "Get Access",
+				"displayName": "",
+				"type": "choice"
+			}
+		}
+	},
+	"creator": {
+		"type": "IDENTITY",
+		"id": "xyz",
+		"name": "Kevin.Dicken"
+	},
+	"trigger": {
+		"type": "SCHEDULED",
+		"attributes": {
+			"cronString": "0 0 1 1,4,7,10 *",
+			"frequency": "cronSchedule",
+			"id": "idn:cron-schedule",
+			"timeZone": "Europe/Amsterdam"
+		}
+	}
+}
